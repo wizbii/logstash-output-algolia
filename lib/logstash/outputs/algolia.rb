@@ -74,9 +74,9 @@ class LogStash::Outputs::Algolia < LogStash::Outputs::Base
   def do_action(action, events, algolia_index)
     case action
     when "index"
-      algolia_index.add_objects(events_group.map(&:to_hash))
+      algolia_index.add_objects(events.map(&:to_hash))
     when "delete"
-      algolia_index.delete_objects(events_group.map { |e| e.get("objectID") })
+      algolia_index.delete_objects(events.map { |e| e.get("objectID") })
     end
   end
 end # class LogStash::Outputs::Algolia

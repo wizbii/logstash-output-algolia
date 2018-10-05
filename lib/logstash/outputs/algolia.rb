@@ -1,16 +1,18 @@
 # encoding: utf-8
 require "logstash/outputs/base"
 require "algoliasearch"
+require 'json'
 
 # An algolia output that does nothing.
 class LogStash::Outputs::Algolia < LogStash::Outputs::Base
   config_name "algolia"
 
   VALID_ACTIONS = ["delete", "index"]
+  MAX_BATCH_SIZE_IN_BYTES = 10_000_000
 
   config :application_id, :validate => :string, :required => true
   config :api_key, :validate => :string, :required => true
-  config :index, :validate => :string, :required => true
+  #config :index, :validate => :string, :required => true
 
   # The Algolia action to perform. Valid actions are:
   #
@@ -50,8 +52,34 @@ class LogStash::Outputs::Algolia < LogStash::Outputs::Base
   end
 
   def partitions(events)
-    [events]
+    sorted_sized_events = events
+      .map { |event| { event_body: event, event_size: event.to_json.size } }
+      .sort_by { |event_hash| event_hash[:event_size]}
+      .reverse
+      .reduce([{batch_events: [], batch_size: 0}]) { |batches, event_hash| 
+        found_a_place = false
+        return batches << {batch_events: [event_hash[:event_body]], batch_size: event_hash[:event_size]} if (event_hash[:event_size] > MAX_BATCH_SIZE_IN_BYTES)
+        batches.each_with_index do |bin, i|
+          if (batches[i][:batch_size] + event_hash[:event_size] <= MAX_BATCH_SIZE_IN_BYTES)
+            batches[i][:batch_size] += event_hash[:event_size]
+            batches[i][:batch_events] << event_hash[:event_body] 
+            found_a_place = true
+            break
+          end
+        end
+        unless found_a_place
+          batches << {batch_events: [event_hash[:event_body]], batch_size: event_hash[:event_size]}
+        end
+        batches
+      }
+      .map { |batch| batch[:batch_events]}
+    
   end
+
+  def add_or_create_batch(batches, event_hash)
+
+  end
+
 
   def valid_action?(action)
     return true if VALID_ACTIONS.include?(action)

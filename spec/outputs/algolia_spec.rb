@@ -10,7 +10,6 @@ describe LogStash::Outputs::Algolia do
     WebMock.enable!
   end
 
-
   let(:output) do
     LogStash::Outputs::Algolia.new({
       "application_id" => "fake-app-id",
@@ -51,7 +50,7 @@ describe LogStash::Outputs::Algolia do
       is_expected.to eq nil
     end
   end
-
+  
   def index_event(id, index)
     event = LogStash::Event.new
     event.set("objectID", id)

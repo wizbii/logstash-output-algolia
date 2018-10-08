@@ -52,16 +52,35 @@ describe LogStash::Outputs::Algolia do
   end
 
   describe "partitions" do
-    let(:objects) { %w(1 22 333 4444 55555 666666 7777777 88888888)}
 
-    subject { output.partitions(objects) }
-    it "gathers objets into batches with each batch size lesser than MAX_BATCH_SIZE_IN_BYTES" do
-        stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 12)
-        expect(subject).to eq  [["88888888"], ["7777777", "1"], ["666666", "22"], ["55555", "333"], ["4444"]]
+    context 'when no object is given' do
+      let(:objects) { []}
+      subject { output.partitions(objects) }
+      it "returns an empty array" do
+          stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 12)
+          expect(subject).to eq  [[]]
+      end
+    end
+
+    context 'when a single object is given' do
+      let(:objects) { %w(1)}
+      subject { output.partitions(objects) }
+      it "returns this object" do
+          stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 12)
+          expect(subject).to eq  [["1"]]
+      end
+    end
+
+    context 'when several objects are given' do
+      let(:objects) { %w(1 22 333 4444 55555 666666 7777777 88888888)}
+      subject { output.partitions(objects) }
+      it "gathers objets into batches with each batch size lesser than MAX_BATCH_SIZE_IN_BYTES" do
+          stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 12)
+          expect(subject).to eq  [["88888888"], ["7777777", "1"], ["666666", "22"], ["55555", "333"], ["4444"]]
+      end
     end
   end
   
-
   def index_event(id, index)
     event = LogStash::Event.new
     event.set("objectID", id)

@@ -50,7 +50,18 @@ describe LogStash::Outputs::Algolia do
       is_expected.to eq nil
     end
   end
+
+  describe "partitions" do
+    let(:objects) { %w(1 22 333 4444 55555 666666 7777777 88888888)}
+
+    subject { output.partitions(objects) }
+    it "gathers objets into batches with each batch size lesser than MAX_BATCH_SIZE_IN_BYTES" do
+        stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 12)
+        expect(subject).to eq  [["88888888"], ["7777777", "1"], ["666666", "22"], ["55555", "333"], ["4444"]]
+    end
+  end
   
+
   def index_event(id, index)
     event = LogStash::Event.new
     event.set("objectID", id)

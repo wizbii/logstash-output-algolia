@@ -12,7 +12,7 @@ class LogStash::Outputs::Algolia < LogStash::Outputs::Base
 
   config :application_id, :validate => :string, :required => true
   config :api_key, :validate => :string, :required => true
-  #config :index, :validate => :string, :required => true
+  config :index, :validate => :string, :required => true
 
   # The Algolia action to perform. Valid actions are:
   #

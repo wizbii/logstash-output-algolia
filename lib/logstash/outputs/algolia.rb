@@ -51,35 +51,32 @@ class LogStash::Outputs::Algolia < LogStash::Outputs::Base
     @indices[name] ||= Algolia::Index.new(name)
   end
 
+  EventInfo = Struct.new(:body, :size)
+  Batch = Struct.new(:events, :size)
   def partitions(events)
     sorted_sized_events = events
-      .map { |event| { event_body: event, event_size: event.to_json.size } }
-      .sort_by { |event_hash| event_hash[:event_size]}
+      .map { |event| EventInfo.new(event, event.to_json.size)}
+      .sort_by { |event_info| event_info.size }
       .reverse
-      .reduce([{batch_events: [], batch_size: 0}]) { |batches, event_hash| 
+      .reduce([Batch.new([], 0)]) { |batches, event_info| 
         found_a_place = false
-        return batches << {batch_events: [event_hash[:event_body]], batch_size: event_hash[:event_size]} if (event_hash[:event_size] > MAX_BATCH_SIZE_IN_BYTES)
-        batches.each_with_index do |bin, i|
-          if (batches[i][:batch_size] + event_hash[:event_size] <= MAX_BATCH_SIZE_IN_BYTES)
-            batches[i][:batch_size] += event_hash[:event_size]
-            batches[i][:batch_events] << event_hash[:event_body] 
+        return batches << Batch.new([event_info.body], event_info.size) if (event_info.size > MAX_BATCH_SIZE_IN_BYTES)
+        batches.each do |batch|
+          if (batch.size + event_info.size <= MAX_BATCH_SIZE_IN_BYTES)
+            batch.size += event_info.size
+            batch.events << event_info.body
             found_a_place = true
             break
           end
         end
         unless found_a_place
-          batches << {batch_events: [event_hash[:event_body]], batch_size: event_hash[:event_size]}
+          batches << Batch.new([event_info.body], event_info.size)
         end
         batches
       }
-      .map { |batch| batch[:batch_events]}
+      .map { |batch| batch.events}
     
   end
-
-  def add_or_create_batch(batches, event_hash)
-
-  end
-
 
   def valid_action?(action)
     return true if VALID_ACTIONS.include?(action)

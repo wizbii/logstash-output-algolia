@@ -88,6 +88,15 @@ describe LogStash::Outputs::Algolia do
           is_expected.to eq [["999999999"], ["88888888"], ["7777777"], ["666666"], ["55555", "1"], ["4444", "22"], ["333"]]
       end
     end
+
+    context 'when several objects are given in a random order' do
+      let(:objects) { %w(999999999 666666 7777777 1 333 4444 55555 88888888 22 ) }
+      subject { output.partitions(objects) }
+      it "gathers objets into batches with each batch size lesser than MAX_BATCH_SIZE_IN_BYTES" do
+          stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 10)
+          is_expected.to eq [["999999999"], ["88888888"], ["7777777"], ["666666"], ["55555", "1"], ["4444", "22"], ["333"]]
+      end
+    end
   end
   
   def index_event(id, index)

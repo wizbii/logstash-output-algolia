@@ -58,7 +58,7 @@ class LogStash::Outputs::Algolia < LogStash::Outputs::Base
       .map { |event| EventInfo.new(event, event.to_json.size)}
       .sort_by { |event_info| event_info.size }
       .reverse
-      .reduce([]) { |batches, event_info| 
+      .reduce([]) do |batches, event_info| 
         found_a_place = false
         next batches << Batch.new([event_info.body], event_info.size) if (event_info.size > MAX_BATCH_SIZE_IN_BYTES)
         batches.each do |batch|
@@ -72,7 +72,8 @@ class LogStash::Outputs::Algolia < LogStash::Outputs::Base
         unless found_a_place
           batches << Batch.new([event_info.body], event_info.size)
         end
-        batches }
+        batches
+      end
       .map { |batch| batch.events }
     
   end

@@ -58,7 +58,7 @@ describe LogStash::Outputs::Algolia do
       subject { output.partitions(objects) }
       it "returns an empty array" do
           stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 10)
-          expect(subject).to eq []
+          is_expected.to eq []
       end
     end
 
@@ -67,7 +67,7 @@ describe LogStash::Outputs::Algolia do
       subject { output.partitions(objects) }
       it "returns this object" do
           stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES",10)
-          expect(subject).to eq  [["1"]]
+          is_expected.to eq [["1"]]
       end
     end
 
@@ -76,7 +76,7 @@ describe LogStash::Outputs::Algolia do
       subject { output.partitions(objects) }
       it "returns this object" do
           stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 10)
-          expect(subject).to eq  [["999999999"]]
+          is_expected.to eq [["999999999"]]
       end
     end
 
@@ -85,7 +85,7 @@ describe LogStash::Outputs::Algolia do
       subject { output.partitions(objects) }
       it "gathers objets into batches with each batch size lesser than MAX_BATCH_SIZE_IN_BYTES" do
           stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 10)
-          expect(subject).to eq  [["999999999"], ["88888888"], ["7777777"], ["666666"], ["55555", "1"], ["4444", "22"], ["333"]]
+          is_expected.to eq [["999999999"], ["88888888"], ["7777777"], ["666666"], ["55555", "1"], ["4444", "22"], ["333"]]
       end
     end
   end

@@ -57,26 +57,35 @@ describe LogStash::Outputs::Algolia do
       let(:objects) { [] }
       subject { output.partitions(objects) }
       it "returns an empty array" do
-          stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 12)
-          expect(subject).to eq  [[]]
+          stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 10)
+          expect(subject).to eq []
       end
     end
 
-    context 'when a single object is given' do
+    context 'when a single object not exceeding MAX_BATCH_SIZE_IN_BYTES is given' do
       let(:objects) { %w(1) }
       subject { output.partitions(objects) }
       it "returns this object" do
-          stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 12)
+          stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES",10)
           expect(subject).to eq  [["1"]]
       end
     end
 
+    context 'when a single object exceeding MAX_BATCH_SIZE_IN_BYTES is given' do
+      let(:objects) { %w(999999999) }
+      subject { output.partitions(objects) }
+      it "returns this object" do
+          stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 10)
+          expect(subject).to eq  [["999999999"]]
+      end
+    end
+
     context 'when several objects are given' do
-      let(:objects) { %w(1 22 333 4444 55555 666666 7777777 88888888) }
+      let(:objects) { %w(1 22 333 4444 55555 666666 7777777 88888888 999999999) }
       subject { output.partitions(objects) }
       it "gathers objets into batches with each batch size lesser than MAX_BATCH_SIZE_IN_BYTES" do
-          stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 12)
-          expect(subject).to eq  [["88888888"], ["7777777", "1"], ["666666", "22"], ["55555", "333"], ["4444"]]
+          stub_const("LogStash::Outputs::Algolia::MAX_BATCH_SIZE_IN_BYTES", 10)
+          expect(subject).to eq  [["999999999"], ["88888888"], ["7777777"], ["666666"], ["55555", "1"], ["4444", "22"], ["333"]]
       end
     end
   end

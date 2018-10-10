@@ -49,6 +49,21 @@ describe LogStash::Outputs::Algolia do
 
       is_expected.to eq nil
     end
+
+    it "rescue on Algolia errors" do
+      allow(Algolia::Index).to receive(:new).with("index2").and_call_original
+
+      expect(Algolia::Index).to receive(:new).with("index1").and_wrap_original do |m, *args|
+        index = m.call(*args)
+        expect(index).to receive(:add_objects).and_raise Algolia::AlgoliaError
+
+        index
+      end
+
+      expect(output.logger). to receive :error
+      is_expected.to eq nil
+
+    end
   end
 
   describe "partitions" do
@@ -98,7 +113,7 @@ describe LogStash::Outputs::Algolia do
       end
     end
   end
-  
+
   def index_event(id, index)
     event = LogStash::Event.new
     event.set("objectID", id)

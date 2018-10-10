@@ -58,7 +58,7 @@ class LogStash::Outputs::Algolia < LogStash::Outputs::Base
       .map { |event| EventInfo.new(event, event.to_json.size)}
       .sort_by { |event_info| event_info.size }
       .reverse
-      .reduce([]) do |batches, event_info| 
+      .reduce([]) do |batches, event_info|
         found_a_place = false
         next batches << Batch.new([event_info.body], event_info.size) if (event_info.size > MAX_BATCH_SIZE_IN_BYTES)
         batches.each do |batch|
@@ -75,7 +75,7 @@ class LogStash::Outputs::Algolia < LogStash::Outputs::Base
         batches
       end
       .map { |batch| batch.events }
-    
+
   end
 
   def valid_action?(action)
@@ -97,11 +97,15 @@ class LogStash::Outputs::Algolia < LogStash::Outputs::Base
   end
 
   def do_action(action, events, algolia_index)
-    case action
-    when "index"
-      algolia_index.add_objects(events.map(&:to_hash))
-    when "delete"
-      algolia_index.delete_objects(events.map { |e| e.get("objectID") })
+    begin
+      case action
+      when "index"
+        algolia_index.add_objects(events.map(&:to_hash))
+      when "delete"
+        algolia_index.delete_objects(events.map { |e| e.get("objectID") })
+      end
+    rescue Algolia::AlgoliaError => e
+      @logger.error("Error when calling algolia (#{action}): " + e.message)
     end
   end
 end # class LogStash::Outputs::Algolia

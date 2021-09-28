@@ -7,7 +7,7 @@ require 'json'
 class LogStash::Outputs::Algolia < LogStash::Outputs::Base
   config_name "algolia"
 
-  VALID_ACTIONS = ["delete", "index"]
+  VALID_ACTIONS = ["delete", "index", "update"]
   MAX_BATCH_SIZE_IN_BYTES = 10_000_000
 
   config :application_id, :validate => :string, :required => true
@@ -101,6 +101,8 @@ class LogStash::Outputs::Algolia < LogStash::Outputs::Base
       case action
       when "index"
         algolia_index.add_objects(events.map(&:to_hash))
+      when "update"
+        algolia_index.partial_update_objects(events.map(&:to_hash))
       when "delete"
         algolia_index.delete_objects(events.map { |e| e.get("objectID") })
       end
